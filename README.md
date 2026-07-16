@@ -2,6 +2,7 @@
 
 基于[XCQ0607/katabump](https://github.com/XCQ0607/katabump)优化：增加singbox全协议代理、随机时间签到、**ALTCHA验证码自动绕过**
 
+### 重要提醒：提示 未找到"See" 按钮...说明代理ip质量有问题，请按要求添加、更换
 
 ## 🚀 GitHub Actions 云端运行 (推荐)
 
