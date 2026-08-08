@@ -749,6 +749,7 @@ async function solveAltchaIfPresent(page, stageName = "Renew阶段", maxAttempts
 
             console.log('正在寻找 "See" 链接...');
             try {
+                console.log(3123131, page);
                 await page.getByRole('link', { name: 'See' }).first().waitFor({ timeout: 15000 });
                 await page.waitForTimeout(1000);
                 await page.getByRole('link', { name: 'See' }).first().click();
