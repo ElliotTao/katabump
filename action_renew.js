@@ -18,16 +18,19 @@ async function sendBarkMessage(message, imagePath = null) {
     if (!BARK_TOKEN) return;
 
     // 发送消息
-    try {
-        const url = `https://api.day.app/${BARK_TOKEN}`;
-        await axios.post(url, {
-            markdown: message,
-            action: 'none'
+    const cmd = `curl -X POST "https://api.day.app/${BARK_TOKEN}" 
+                    -H 'Content-Type: application/json; charset=utf-8'
+                    -d '{
+                        "markdown": "${message}",
+                        "action": "none"
+                    }'`;
+    await new Promise(resolve => {
+        exec(cmd, (err) => {
+            if (err) console.error('[Bark] Failed to send message:', err.message);
+            else console.log('[Bark] Message sent.');
+            resolve();
         });
-        console.log('[Bark] Message sent.');
-    } catch (e) {
-        console.error('[Bark] Failed to send message:', e.message);
-    }
+    });
 }
 
 async function sendTelegramMessage(message, imagePath = null) {
@@ -79,7 +82,6 @@ let PROXY_CONFIG = null;
 
 async function detectSingboxProxy() {
   if (!PROXY_URL) return false;
-  console.log('PROXY_URL', PROXY_URL);
   try {
     await axios.get('http://127.0.0.1:8080', { timeout: 2000, proxy: false });
     return true;
