@@ -22,7 +22,7 @@ async function sendBarkMessage(message, imagePath = null) {
         const url = `https://api.day.app/${BARK_TOKEN}`;
         await axios.post(url, {
             markdown: message,
-            image: imagePath
+            action: 'none'
         });
         console.log('[Bark] Message sent.');
     } catch (e) {
