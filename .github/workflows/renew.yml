@@ -60,9 +60,7 @@ jobs:
         TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
         TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
-      run: |
-        echo "PROXY_URL (base64) = $(echo ${PROXY_URL} | base64)"
-        xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" node action_renew.js
+      run: xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" node action_renew.js
 
     - name: Upload Screenshots
       if: always()
