@@ -6,12 +6,29 @@ const path = require('path');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 
+const BARK_TOKEN = process.env.BARK_TOKEN;
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_CHAT_ID = process.env.TG_CHAT_ID;
 const GITHUB_EVENT_NAME = process.env.GITHUB_EVENT_NAME || '';
 
 // Anti-detection: scheduled runs get 0-3h random delay; manual runs skip delay
 const SINGBOX_LOCAL_PROXY = 'http://127.0.0.1:8080';
+
+async function sendBarkMessage(message, imagePath = null) {
+    if (!BARK_TOKEN) return;
+
+    // 发送消息
+    try {
+        const url = `https://api.day.app/${BARK_TOKEN}`;
+        await axios.post(url, {
+            markdown: message,
+            image: imagePath
+        });
+        console.log('[Bark] Message sent.');
+    } catch (e) {
+        console.error('[Bark] Failed to send message:', e.message);
+    }
+}
 
 async function sendTelegramMessage(message, imagePath = null) {
     if (!TG_BOT_TOKEN || !TG_CHAT_ID) return;
@@ -62,6 +79,7 @@ let PROXY_CONFIG = null;
 
 async function detectSingboxProxy() {
   if (!PROXY_URL) return false;
+  console.log('PROXY_URL', PROXY_URL);
   try {
     await axios.get('http://127.0.0.1:8080', { timeout: 2000, proxy: false });
     return true;
@@ -737,7 +755,7 @@ async function solveAltchaIfPresent(page, stageName = "Renew阶段", maxAttempts
           const failShotPath = path.join(failPhotoDir, `${failSafeName}_login_fail.png`);
           try { await page.screenshot({ path: failShotPath, fullPage: true }); } catch (e) { }
 
-          await sendTelegramMessage(`❌ *登录失败*\n用户: ${user.username}\n原因: 账号或密码错误`, failShotPath);
+          await sendBarkMessage(`❌ *登录失败*\n用户: ${user.username}\n原因: 账号或密码错误`, failShotPath);
 
                         continue;
                     }
@@ -883,7 +901,7 @@ async function solveAltchaIfPresent(page, stageName = "Renew阶段", maxAttempts
                                     const skipShotPath = path.join(photoDir, `${safeUser}_skip.png`);
                                     try { await page.screenshot({ path: skipShotPath, fullPage: true }); } catch (e) { }
 
-                                    await sendTelegramMessage(`⏳ *暂无法续期 (跳过)*\n用户: ${user.username}\n原因: 还没到时间\n下次可用: ${dateStr}`, skipShotPath);
+                                    await sendBarkMessage(`⏳ *暂无法续期 (跳过)*\n用户: ${user.username}\n原因: 还没到时间\n下次可用: ${dateStr}`, skipShotPath);
 
                                     renewSuccess = true; // Mark as done to stop retries
                                     try {
@@ -919,7 +937,7 @@ async function solveAltchaIfPresent(page, stageName = "Renew阶段", maxAttempts
                             const successShotPath = path.join(photoDir, `${safeUser}_success.png`);
                             try { await page.screenshot({ path: successShotPath, fullPage: true }); } catch (e) { }
 
-                            await sendTelegramMessage(`✅ *续期成功*\n用户: ${user.username}\n状态: 服务器已成功续期！`, successShotPath);
+                            await sendBarkMessage(`✅ *续期成功*\n用户: ${user.username}\n状态: 服务器已成功续期！`, successShotPath);
                             renewSuccess = true;
                             break;
                         } else {
