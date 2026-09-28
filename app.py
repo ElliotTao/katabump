@@ -57,20 +57,10 @@ def send_bark_message(status_icon, status_text, time_left=""):
     local_time = time.gmtime(time.time() + 8 * 3600)
     current_time_str = time.strftime("%Y-%m-%d %H:%M:%S", local_time)
 
-    # 邮箱脱敏：保留用户名前2位和后2位，中间用****代替
-    if '@' in CURRENT_EMAIL:
-        name, domain = CURRENT_EMAIL.split('@', 1)
-        if len(name) > 4:
-            masked_email = f"{name[:2]}****{name[-2:]}@{domain}"
-        else:
-            masked_email = f"{name}@{domain}"
-    else:
-        masked_email = CURRENT_EMAIL[:2] + '****'
-
     text = (
         f"🇫🇷 katabump 续期通知\n\n"
         f"{status_icon} {status_text}\n"
-        f"👤 续期账户: {masked_email}\n"
+        f"👤 续期账户: {get_masked_email()}\n"
         f"⏱️ 续期时间: {current_time_str}"
     )
 
@@ -130,6 +120,18 @@ def send_tg_message(status_icon, status_text, time_left=""):
             print(f"⚠️ Telegram 通知发送失败: {r.text}")
     except Exception as e:
         print(f"⚠️ Telegram 通知发送异常: {e}")
+
+def get_masked_email():
+    # 邮箱脱敏：保留用户名前2位和后2位，中间用****代替
+    if '@' in CURRENT_EMAIL:
+        name, domain = CURRENT_EMAIL.split('@', 1)
+        if len(name) > 4:
+            masked_email = f"{name[:2]}****{name[-2:]}@{domain}"
+        else:
+            masked_email = f"{name}@{domain}"
+    else:
+        masked_email = CURRENT_EMAIL[:2] + '****'
+    return masked_email
 
 #  页面注入脚本
 _EXPAND_JS = """
@@ -713,7 +715,7 @@ def main():
         global CURRENT_EMAIL
         CURRENT_EMAIL = acct["email"]
         print("\n" + "=" * 30)
-        print(f"📧 账号 {idx}/{len(accounts)}: {acct['email']}")
+        print(f"📧 账号 {idx}/{len(accounts)}: {get_masked_email()}")
         print("=" * 30)
 
         with SB(**sb_kwargs) as sb:
