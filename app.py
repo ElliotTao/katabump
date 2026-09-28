@@ -59,8 +59,8 @@ def send_bark_message(status_icon, status_text, time_left=""):
 
     text = (
         f"🇫🇷 katabump 续期通知\n\n"
-        f"{status_icon} {status_text}\n"
-        f"👤 续期账户: {get_masked_email()}\n"
+        f"{status_icon} {status_text} {time_left}\n\n"
+        f"👤 续期账户: {get_masked_email()}\n\n"
         f"⏱️ 续期时间: {current_time_str}"
     )
 
