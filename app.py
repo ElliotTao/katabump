@@ -13,6 +13,7 @@ PASSWORD     = os.environ.get("KATABUMP_PASSWORD") or "" # 账号密码(单账�
 TG_CHAT_ID   = os.environ.get("TG_CHAT_ID") or ""        # tg通知 chat id(可选)
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN") or ""      # tg通知bot token(可选)
 USERS_JSON   = os.environ.get("USERS_JSON") or ""        # 多账号 JSON(可选)
+BARK_TOKEN   = os.environ.get("BARK_TOKEN") or ""        # bark通知 token(可选)
 
 BASE_URL = "https://dashboard.katabump.com"  # 网站链接
 
@@ -45,6 +46,48 @@ def load_accounts():
         accounts.append({"email": EMAIL, "password": PASSWORD})
         print("✅ 使用单账号环境变量 (KATABUMP_EMAIL/KATABUMP_PASSWORD)")
     return accounts
+
+#  Bark 推送模块
+def send_bark_message(status_icon, status_text, time_left=""):
+    if not BARK_TOKEN:
+        print("ℹ️ 未配置 BARK_TOKEN，跳过 Bark 推送。")
+        return
+
+    # 获取北京时间 (UTC+8)
+    local_time = time.gmtime(time.time() + 8 * 3600)
+    current_time_str = time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+
+    # 邮箱脱敏：保留用户名前2位和后2位，中间用****代替
+    if '@' in CURRENT_EMAIL:
+        name, domain = CURRENT_EMAIL.split('@', 1)
+        if len(name) > 4:
+            masked_email = f"{name[:2]}****{name[-2:]}@{domain}"
+        else:
+            masked_email = f"{name}@{domain}"
+    else:
+        masked_email = CURRENT_EMAIL[:2] + '****'
+
+    text = (
+        f"🇫🇷 katabump 续期通知\n\n"
+        f"{status_icon} {status_text}\n"
+        f"👤 续期账户: {masked_email}\n"
+        f"⏱️ 续期时间: {current_time_str}"
+    )
+
+    url = f"https://api.day.app/{BARK_TOKEN}"
+    payload = {
+        "markdown": text,
+        "action": "none"
+    }
+    
+    try:
+        r = requests.post(url, json=payload, timeout=10)
+        if r.status_code == 200:
+            print("📩 Bark 通知发送成功！")
+        else:
+            print(f"⚠️ Bark 通知发送失败: {r.text}")
+    except Exception as e:
+        print(f"⚠️ Bark 通知发送异常: {e}")
 
 #  Telegram 推送模块
 def send_tg_message(status_icon, status_text, time_left=""):
@@ -387,7 +430,7 @@ def _goto_server_detail(sb) -> bool:
     alert_text = _read_alert(sb)
     if alert_text and "can't renew" in alert_text.lower():
         print(f"ℹ️  页面顶部提示: {alert_text}")
-        send_tg_message("ℹ️", "⚠️ 未到续期时间", alert_text)
+        send_bark_message("ℹ️", "⚠️ 未到续期时间", alert_text)
         return False
 
     # 多种选择器尝试查找 See 链接
@@ -609,14 +652,14 @@ def _check_renew_result(sb):
         print(f"📩 页面提示: {alert_text}")
         low = alert_text.lower()
         if "can't renew" in low or "unable" in low:
-            send_tg_message("⏳", "未到续期时间", alert_text)
+            send_bark_message("⏳", "未到续期时间", alert_text)
         elif any(kw in low for kw in ( "renewed", "success", "extended")):
-            send_tg_message("✅", "续期成功", alert_text)
+            send_bark_message("✅", "续期成功", alert_text)
         else:
-            send_tg_message("ℹ️", "续期操作已执行", alert_text)
+            send_bark_message("ℹ️", "续期操作已执行", alert_text)
     else:
         print("ℹ️ 未检测到明确的提示框，可能续期操作未生效")
-        send_tg_message("ℹ️", "续期操作已执行", "未检测到明确提示")
+        send_bark_message("ℹ️", "续期操作已执行", "未检测到明确提示")
 
 
 def renew_server(sb):
@@ -684,7 +727,7 @@ def main():
                 renew_server(sb)   # 登录成功后自动续期
             else:
                 print(f"\n❌ 账号 {acct['email']} 登录失败，终止后续续期操作。")
-                send_tg_message("❌", "登录失败", "未知")
+                send_bark_message("❌", "登录失败", "未知")
 
 if __name__ == "__main__":
     main()
