@@ -2,15 +2,16 @@ name: Katabump Auto Renew
 
 on:
   schedule:
-  - cron: '0 2 2/2 * *'  # 每天 UTC 0点 (北京时间 8点) 运行,根据服务到期时间自行修改
+  # 每天监测一次 UTC 02:00 (北京时间 10:00)。每天都跑,到期即续,避免错过续期窗口。
+  - cron: '0 2 * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
   Renew-Katabump:
     runs-on: ubuntu-latest
     permissions:
-      actions: write  
-      contents: read
+      contents: write
+      actions: write
     
     steps:
     - uses: actions/checkout@v6
@@ -45,6 +46,20 @@ jobs:
       run: |
         xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
           python3 app.py
+
+    # 更新时间到time.txt,避免90天未更新导致工作流暂停
+    - name: 🕒 更新运行时间
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        echo "$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" > time.txt
+        git add time.txt
+        if git diff --cached --quiet; then
+          echo "No need to commit"
+        else
+          git commit -m "⏱️ Auto Update by Github Actions $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')"
+          git push origin main
+        fi
         
     - name: 🧹 清理旧的工作流运行记录
       if: always()
